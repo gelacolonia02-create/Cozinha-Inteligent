@@ -101,7 +101,7 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} ${isLargeText ? 'text-lg' : 'text-base'}`}>
       
-      {/* Dynamic Header */}
+      {/* Header */}
       <header className={`sticky top-0 z-40 backdrop-blur-md border-b px-4 py-4 transition-colors duration-300 ${isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => {setActiveTab('home'); setSelectedRecipe(null);}}>
@@ -142,7 +142,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Container */}
+      {/* Content */}
       <main className="max-w-7xl mx-auto p-4 sm:p-8 pb-32">
         {selectedRecipe ? (
           <RecipeDetail 
@@ -158,7 +158,6 @@ const App: React.FC = () => {
           <div className="animate-in fade-in duration-500">
             {activeTab === 'home' || activeTab === 'favorites' ? (
               <div className="space-y-8">
-                {/* Visual Section Header */}
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                   <div>
                     <h2 className="text-4xl font-bold font-serif leading-tight">
@@ -177,7 +176,6 @@ const App: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Filter Controls */}
                 <div className={`grid grid-cols-1 transition-all duration-300 gap-4 overflow-hidden ${showFilters ? 'max-h-[500px] opacity-100 mb-8' : 'max-h-0 opacity-0'}`}>
                    <div className={`p-6 sm:p-8 rounded-[2rem] border ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -228,7 +226,6 @@ const App: React.FC = () => {
                    </div>
                 </div>
 
-                {/* Recipe Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                   {filteredRecipes.map(recipe => (
                     <RecipeCard 
@@ -291,9 +288,7 @@ const App: React.FC = () => {
                       <p className="text-slate-500 font-medium">Use o que você já tem em casa</p>
                     </div>
                   </div>
-                  
                   <p className="text-sm mb-6 leading-relaxed opacity-80">Liste seus ingredientes separados por vírgula e deixe nossa inteligência artificial criar o cardápio perfeito para você.</p>
-                  
                   <textarea 
                     placeholder="Ex: Frango, milho, creme de leite, batata..."
                     className={`w-full p-6 rounded-[2rem] border-2 transition-all outline-none font-medium resize-none ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-orange-500/50' : 'bg-slate-50 border-slate-100 focus:border-orange-500/30'}`}
@@ -301,7 +296,6 @@ const App: React.FC = () => {
                     value={ingredientInputs}
                     onChange={(e) => setIngredientInputs(e.target.value)}
                   />
-                  
                   <button 
                     disabled={loadingSuggestions || !ingredientInputs.trim()}
                     onClick={handleSuggest}
@@ -347,12 +341,10 @@ const App: React.FC = () => {
                     <ChefHat className="w-5 h-5 text-orange-500" />
                   </div>
                 </div>
-                
                 <div>
                   <h2 className="text-3xl font-bold font-serif">Mestre Cuca</h2>
                   <p className="text-slate-500 font-medium">Chef entusiasta & Aventureiro</p>
                 </div>
-                
                 <div className="grid grid-cols-2 gap-6">
                   <div className={`p-6 rounded-3xl ${isDarkMode ? 'bg-slate-900' : 'bg-white shadow-sm'}`}>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Receitas Criadas</p>
@@ -392,7 +384,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Navigation Footer */}
+      {/* Nav Footer */}
       <nav className={`fixed bottom-0 left-0 right-0 z-50 px-6 py-4 pb-8 transition-all duration-300 border-t ${isDarkMode ? 'bg-slate-950/95 border-slate-800' : 'bg-white/95 border-slate-200'} backdrop-blur-xl`}>
         <div className="max-w-lg mx-auto flex items-center justify-around">
           <NavButton active={activeTab === 'home'} onClick={() => {setActiveTab('home'); setSelectedRecipe(null);}} icon={<Utensils />} label="Home" />
