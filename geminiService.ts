@@ -9,10 +9,7 @@ export const getIngredientSubstitutions = async (ingredientName: string) => {
   const ai = getAI();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Sugira 3 substitutos comuns para o ingrediente "${ingredientName}" em receitas culinárias. Formate como uma lista curta.`,
-    config: {
-      temperature: 0.7,
-    }
+    contents: `Você é um chef experiente. Sugira 3 substitutos comuns para o ingrediente "${ingredientName}" em receitas culinárias. Justifique brevemente cada um.`,
   });
   return response.text;
 };
@@ -21,10 +18,7 @@ export const getNutritionalQuickInfo = async (recipeTitle: string, ingredients: 
   const ai = getAI();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Analise brevemente o perfil nutricional da receita "${recipeTitle}" com os ingredientes: ${ingredients}. Destaque pontos positivos e calorias estimadas.`,
-    config: {
-      temperature: 0.5,
-    }
+    contents: `Você é um nutricionista. Analise o perfil nutricional da receita "${recipeTitle}" com estes ingredientes: ${ingredients}. Destaque benefícios e forneça uma estimativa de calorias por porção. Seja conciso.`,
   });
   return response.text;
 };
@@ -33,7 +27,7 @@ export const suggestRecipesFromIngredients = async (ingredientsList: string[]) =
   const ai = getAI();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Com base nestes ingredientes: ${ingredientsList.join(', ')}, sugira 2 receitas rápidas.`,
+    contents: `Com base nestes ingredientes disponíveis: ${ingredientsList.join(', ')}. Sugira exatamente 2 receitas criativas que podem ser feitas.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -52,7 +46,8 @@ export const suggestRecipesFromIngredients = async (ingredientsList: string[]) =
   });
   
   try {
-    return JSON.parse(response.text || '[]');
+    const text = response.text || '[]';
+    return JSON.parse(text);
   } catch (e) {
     console.error("Erro ao processar JSON da IA:", e);
     return [];

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Utensils, 
   Search, 
@@ -7,17 +7,16 @@ import {
   Plus, 
   User, 
   Clock, 
-  ChevronRight, 
   ChefHat, 
   Flame,
-  ArrowLeft,
   Moon,
   Sun,
   Type as TypeIcon,
   ShoppingCart,
   Sparkles,
   Filter,
-  X
+  X,
+  ChevronRight
 } from 'lucide-react';
 import { Recipe, Category, Difficulty } from './types.ts';
 import { MOCK_RECIPES } from './constants.tsx';
@@ -43,18 +42,16 @@ const App: React.FC = () => {
   const [maxPrepTime, setMaxPrepTime] = useState<number>(120);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Suggestion State
+  // AI Suggestion State
   const [ingredientInputs, setIngredientInputs] = useState('');
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     if (isDarkMode) {
-      document.body.classList.add('bg-slate-900', 'text-white');
-      document.body.classList.remove('bg-slate-50', 'text-slate-900');
+      document.documentElement.classList.add('dark');
     } else {
-      document.body.classList.remove('bg-slate-900', 'text-white');
-      document.body.classList.add('bg-slate-50', 'text-slate-900');
+      document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
 
@@ -76,19 +73,19 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredRecipes = recipes.filter(r => {
-    const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         r.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'Todos' || r.category === selectedCategory;
-    const matchesDifficulty = selectedDifficulty === 'Todos' || r.difficulty === selectedDifficulty;
-    const matchesTime = r.prepTimeMinutes <= maxPrepTime;
-    
-    return matchesSearch && matchesCategory && matchesDifficulty && matchesTime;
-  });
-
-  const displayRecipes = activeTab === 'favorites' 
-    ? filteredRecipes.filter(r => r.isFavorite) 
-    : filteredRecipes;
+  const filteredRecipes = useMemo(() => {
+    return recipes.filter(r => {
+      const matchesSearch = r.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                           r.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'Todos' || r.category === selectedCategory;
+      const matchesDifficulty = selectedDifficulty === 'Todos' || r.difficulty === selectedDifficulty;
+      const matchesTime = r.prepTimeMinutes <= maxPrepTime;
+      
+      const isTabMatch = activeTab === 'favorites' ? r.isFavorite : true;
+      
+      return matchesSearch && matchesCategory && matchesDifficulty && matchesTime && isTabMatch;
+    });
+  }, [recipes, searchQuery, selectedCategory, selectedDifficulty, maxPrepTime, activeTab]);
 
   if (isCooking && selectedRecipe) {
     return (
@@ -102,41 +99,42 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen pb-24 ${isLargeText ? 'text-lg' : 'text-base'}`}>
-      {/* Header */}
-      <header className={`sticky top-0 z-40 transition-colors ${isDarkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-md border-b px-4 py-4`}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => {setActiveTab('home'); setSelectedRecipe(null);}}>
-            <div className="p-2 bg-orange-500 rounded-xl">
+    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} ${isLargeText ? 'text-lg' : 'text-base'}`}>
+      
+      {/* Dynamic Header */}
+      <header className={`sticky top-0 z-40 backdrop-blur-md border-b px-4 py-4 transition-colors duration-300 ${isDarkMode ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => {setActiveTab('home'); setSelectedRecipe(null);}}>
+            <div className="p-2.5 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-lg shadow-orange-500/20">
               <Utensils className="text-white w-6 h-6" />
             </div>
-            <h1 className="text-xl font-bold font-serif hidden sm:block">Cozinha Inteligente</h1>
+            <h1 className="text-2xl font-black font-serif tracking-tight hidden md:block">Cozinha Inteligente</h1>
           </div>
           
-          <div className="flex-1 max-w-md mx-4">
-            <div className={`relative flex items-center ${isDarkMode ? 'bg-slate-800' : 'bg-slate-100'} rounded-full px-4 py-2`}>
+          <div className="flex-1 max-w-xl">
+            <div className={`relative flex items-center rounded-2xl px-4 py-2.5 transition-all duration-300 ${isDarkMode ? 'bg-slate-900 focus-within:ring-2 focus-within:ring-orange-500/50' : 'bg-slate-100 focus-within:ring-2 focus-within:ring-orange-500/30'}`}>
               <Search className="w-5 h-5 text-slate-400 mr-2" />
               <input 
                 type="text" 
-                placeholder="Buscar receitas..." 
-                className="bg-transparent border-none outline-none w-full text-sm"
+                placeholder="Qual o sabor de hoje?" 
+                className="bg-transparent border-none outline-none w-full text-sm font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-3">
             <button 
               onClick={() => setIsLargeText(!isLargeText)}
-              className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-slate-100'} transition-colors`}
-              title="Aumentar Fonte"
+              className={`p-2.5 rounded-xl transition-colors ${isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-slate-100'}`}
+              title="Acessibilidade: Texto Grande"
             >
-              <TypeIcon className="w-5 h-5" />
+              <TypeIcon className="w-5 h-5 text-slate-400" />
             </button>
             <button 
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-slate-100'} transition-colors`}
+              className={`p-2.5 rounded-xl transition-all duration-500 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}
             >
               {isDarkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
             </button>
@@ -144,8 +142,8 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-6xl mx-auto p-4 sm:p-6">
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto p-4 sm:p-8 pb-32">
         {selectedRecipe ? (
           <RecipeDetail 
             recipe={selectedRecipe} 
@@ -157,58 +155,54 @@ const App: React.FC = () => {
             onAddToShoppingList={(item) => setShoppingList(prev => [...prev, item])}
           />
         ) : (
-          <>
-            {activeTab === 'home' && (
+          <div className="animate-in fade-in duration-500">
+            {activeTab === 'home' || activeTab === 'favorites' ? (
               <div className="space-y-8">
-                {/* Filters Section */}
-                <section className="space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-3xl font-bold font-serif">Explore Receitas</h2>
-                      <p className={`${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Encontre sua próxima refeição favorita</p>
-                    </div>
-                    <button 
-                      onClick={() => setShowFilters(!showFilters)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all ${showFilters ? 'bg-orange-500 text-white' : isDarkMode ? 'bg-slate-800 text-slate-300' : 'bg-white shadow-sm border border-slate-200'}`}
-                    >
-                      <Filter className="w-4 h-4" />
-                      Filtros
-                    </button>
+                {/* Visual Section Header */}
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                  <div>
+                    <h2 className="text-4xl font-bold font-serif leading-tight">
+                      {activeTab === 'home' ? 'Suas Descobertas' : 'Favoritos'}
+                    </h2>
+                    <p className={`mt-2 font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {activeTab === 'home' ? 'Inspiração para cada momento da sua cozinha' : 'Seus pratos mais amados reunidos aqui'}
+                    </p>
                   </div>
+                  <button 
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold transition-all ${showFilters ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : isDarkMode ? 'bg-slate-900 text-slate-300' : 'bg-white shadow-sm border border-slate-200 hover:border-orange-200'}`}
+                  >
+                    <Filter className="w-4 h-4" />
+                    Filtros {showFilters ? 'Ativos' : ''}
+                  </button>
+                </div>
 
-                  {/* Horizontal Category Scroll */}
-                  <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                    {['Todos', ...Object.values(Category)].map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setSelectedCategory(cat as Category | 'Todos')}
-                        className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                          selectedCategory === cat 
-                            ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
-                            : isDarkMode ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-white text-slate-500 hover:bg-orange-50'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Advanced Filters Drawer */}
-                  {showFilters && (
-                    <div className={`p-6 rounded-3xl border animate-in slide-in-from-top-4 duration-300 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Filter Controls */}
+                <div className={`grid grid-cols-1 transition-all duration-300 gap-4 overflow-hidden ${showFilters ? 'max-h-[500px] opacity-100 mb-8' : 'max-h-0 opacity-0'}`}>
+                   <div className={`p-6 sm:p-8 rounded-[2rem] border ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-100 shadow-sm'}`}>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Dificuldade</label>
+                          <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Categoria</label>
                           <div className="flex flex-wrap gap-2">
-                            {['Todos', ...Object.values(Difficulty)].map((diff) => (
+                            {['Todos', ...Object.values(Category)].map(cat => (
+                              <button
+                                key={cat}
+                                onClick={() => setSelectedCategory(cat as any)}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${selectedCategory === cat ? 'bg-orange-500 text-white shadow-md' : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}
+                              >
+                                {cat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Dificuldade</label>
+                          <div className="flex flex-wrap gap-2">
+                            {['Todos', ...Object.values(Difficulty)].map(diff => (
                               <button
                                 key={diff}
-                                onClick={() => setSelectedDifficulty(diff as Difficulty | 'Todos')}
-                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                                  selectedDifficulty === diff 
-                                    ? 'bg-orange-100 text-orange-600' 
-                                    : isDarkMode ? 'bg-slate-900 text-slate-500' : 'bg-slate-50 text-slate-500'
-                                }`}
+                                onClick={() => setSelectedDifficulty(diff as any)}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${selectedDifficulty === diff ? 'bg-orange-100 text-orange-600' : isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}
                               >
                                 {diff}
                               </button>
@@ -216,101 +210,68 @@ const App: React.FC = () => {
                           </div>
                         </div>
                         <div>
-                          <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex justify-between">
-                            Tempo Máximo <span>{maxPrepTime} min</span>
+                          <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-4 flex justify-between">
+                            Tempo Máximo <span>{maxPrepTime} MIN</span>
                           </label>
                           <input 
-                            type="range" 
-                            min="5" 
-                            max="120" 
-                            step="5"
+                            type="range" min="5" max="120" step="5"
                             value={maxPrepTime}
                             onChange={(e) => setMaxPrepTime(Number(e.target.value))}
-                            className="w-full accent-orange-500"
+                            className="w-full accent-orange-500 mt-2"
                           />
-                          <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2">
-                            <span>5 MIN</span>
-                            <span>60 MIN</span>
-                            <span>120+ MIN</span>
+                          <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-3">
+                            <span>VAPT-VUPT</span>
+                            <span>GOURMET</span>
                           </div>
                         </div>
                       </div>
-                      <div className="mt-6 pt-6 border-t border-slate-100/10 flex justify-end">
-                        <button 
-                          onClick={() => {
-                            setSelectedDifficulty('Todos');
-                            setMaxPrepTime(120);
-                            setSelectedCategory('Todos');
-                          }}
-                          className="text-xs font-bold text-slate-400 hover:text-red-500 flex items-center gap-1"
-                        >
-                          <X className="w-3 h-3" /> Limpar Filtros
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                   </div>
+                </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {displayRecipes.map(recipe => (
-                      <RecipeCard 
-                        key={recipe.id} 
-                        recipe={recipe} 
-                        onClick={() => setSelectedRecipe(recipe)}
-                        isDarkMode={isDarkMode}
-                      />
-                    ))}
+                {/* Recipe Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                  {filteredRecipes.map(recipe => (
+                    <RecipeCard 
+                      key={recipe.id} 
+                      recipe={recipe} 
+                      onClick={() => setSelectedRecipe(recipe)}
+                      isDarkMode={isDarkMode}
+                    />
+                  ))}
+                  
+                  {activeTab === 'home' && (
                     <button 
                       onClick={() => setActiveTab('create')}
-                      className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl transition-all ${isDarkMode ? 'border-slate-700 hover:border-orange-500 hover:bg-slate-800' : 'border-slate-200 hover:border-orange-500 hover:bg-orange-50'}`}
+                      className={`flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-[2.5rem] transition-all group ${isDarkMode ? 'border-slate-800 hover:border-orange-500 hover:bg-slate-900/50' : 'border-slate-200 hover:border-orange-500 hover:bg-orange-50/50'}`}
                     >
-                      <Plus className="w-12 h-12 text-orange-500 mb-2" />
-                      <span className="font-semibold">Adicionar Receita</span>
+                      <div className="p-4 bg-orange-100 dark:bg-orange-950 rounded-full mb-4 group-hover:scale-110 transition-transform">
+                        <Plus className="w-8 h-8 text-orange-500" />
+                      </div>
+                      <span className="font-bold text-slate-400 group-hover:text-orange-500 transition-colors">Nova Receita</span>
+                    </button>
+                  )}
+                </div>
+
+                {filteredRecipes.length === 0 && (
+                  <div className={`text-center py-24 rounded-[3rem] border-2 border-dashed ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
+                    <Utensils className="w-16 h-16 text-slate-300 mx-auto mb-6" />
+                    <h3 className="text-xl font-bold mb-2">Nada por aqui...</h3>
+                    <p className="text-slate-500 max-w-xs mx-auto">Tente ajustar seus filtros ou busca para encontrar o que deseja.</p>
+                    <button 
+                      onClick={() => {setSelectedCategory('Todos'); setSelectedDifficulty('Todos'); setMaxPrepTime(120); setSearchQuery('');}}
+                      className="mt-6 font-bold text-orange-500 hover:underline"
+                    >
+                      Limpar Filtros
                     </button>
                   </div>
-
-                  {displayRecipes.length === 0 && (
-                    <div className="text-center py-20 bg-white/50 dark:bg-slate-800/50 rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-700">
-                      <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                      <p className="text-slate-500 font-bold">Nenhuma receita encontrada com esses filtros.</p>
-                      <button 
-                        onClick={() => {
-                          setSelectedCategory('Todos');
-                          setSelectedDifficulty('Todos');
-                          setMaxPrepTime(120);
-                          setSearchQuery('');
-                        }}
-                        className="mt-4 text-orange-500 font-bold text-sm"
-                      >
-                        Resetar todos os filtros
-                      </button>
-                    </div>
-                  )}
-                </section>
-              </div>
-            )}
-
-            {activeTab === 'favorites' && (
-              <section>
-                <h2 className="text-3xl font-bold font-serif mb-6">Suas Favoritas</h2>
-                {displayRecipes.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {displayRecipes.map(recipe => (
-                      <RecipeCard key={recipe.id} recipe={recipe} onClick={() => setSelectedRecipe(recipe)} isDarkMode={isDarkMode} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-20">
-                    <Heart className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">Você ainda não favoritou nenhuma receita que corresponda aos filtros atuais.</p>
-                  </div>
                 )}
-              </section>
-            )}
+              </div>
+            ) : null}
 
             {activeTab === 'create' && (
               <RecipeForm 
                 onSave={(newRecipe) => {
-                  setRecipes(prev => [...prev, { ...newRecipe, id: Date.now().toString(), isFavorite: false }]);
+                  setRecipes(prev => [{ ...newRecipe, id: Date.now().toString(), isFavorite: false }, ...prev]);
                   setActiveTab('home');
                 }}
                 onCancel={() => setActiveTab('home')}
@@ -319,39 +280,56 @@ const App: React.FC = () => {
             )}
 
             {activeTab === 'suggestions' && (
-              <div className="max-w-2xl mx-auto space-y-8">
-                <div className={`p-6 rounded-3xl ${isDarkMode ? 'bg-slate-800' : 'bg-white shadow-sm'}`}>
-                  <div className="flex items-center gap-3 mb-4 text-orange-500">
-                    <Sparkles className="w-6 h-6" />
-                    <h2 className="text-xl font-bold">O que tem na geladeira?</h2>
+              <div className="max-w-3xl mx-auto space-y-10">
+                <div className={`p-8 sm:p-12 rounded-[3rem] ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white shadow-xl'}`}>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-orange-100 rounded-2xl">
+                      <Sparkles className="w-8 h-8 text-orange-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-bold font-serif">O Chef IA sugere</h2>
+                      <p className="text-slate-500 font-medium">Use o que você já tem em casa</p>
+                    </div>
                   </div>
-                  <p className="text-sm mb-4 opacity-70">Digite os ingredientes que você tem (separados por vírgula) e o Gemini sugerirá receitas incríveis.</p>
+                  
+                  <p className="text-sm mb-6 leading-relaxed opacity-80">Liste seus ingredientes separados por vírgula e deixe nossa inteligência artificial criar o cardápio perfeito para você.</p>
+                  
                   <textarea 
-                    placeholder="Ex: ovo, arroz, tomate, frango..."
-                    className={`w-full p-4 rounded-2xl border-2 transition-all outline-none ${isDarkMode ? 'bg-slate-900 border-slate-700 focus:border-orange-500' : 'bg-slate-50 border-slate-100 focus:border-orange-500'}`}
-                    rows={3}
+                    placeholder="Ex: Frango, milho, creme de leite, batata..."
+                    className={`w-full p-6 rounded-[2rem] border-2 transition-all outline-none font-medium resize-none ${isDarkMode ? 'bg-slate-950 border-slate-800 focus:border-orange-500/50' : 'bg-slate-50 border-slate-100 focus:border-orange-500/30'}`}
+                    rows={4}
                     value={ingredientInputs}
                     onChange={(e) => setIngredientInputs(e.target.value)}
                   />
+                  
                   <button 
-                    disabled={loadingSuggestions}
+                    disabled={loadingSuggestions || !ingredientInputs.trim()}
                     onClick={handleSuggest}
-                    className="w-full mt-4 bg-orange-500 text-white py-4 rounded-2xl font-bold hover:bg-orange-600 transition-colors disabled:opacity-50"
+                    className="w-full mt-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-5 rounded-[2rem] font-black text-lg hover:shadow-xl hover:shadow-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                   >
-                    {loadingSuggestions ? 'Gerando ideias...' : 'Sugerir Receitas'}
+                    {loadingSuggestions ? (
+                      <span className="flex items-center justify-center gap-3">
+                        <span className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                        Criando sugestões...
+                      </span>
+                    ) : 'Explorar Possibilidades'}
                   </button>
                 </div>
 
                 {aiSuggestions.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-lg">Sugestões para você:</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-8 duration-700">
                     {aiSuggestions.map((s, idx) => (
-                      <div key={idx} className={`p-6 rounded-3xl border transition-all ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100 shadow-sm'}`}>
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="text-xl font-bold text-orange-500">{s.title}</h4>
-                          <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">{s.time}</span>
+                      <div key={idx} className={`p-8 rounded-[2.5rem] border transition-all hover:scale-[1.02] ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100 shadow-lg'}`}>
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="text-xs font-black uppercase tracking-widest text-orange-500 bg-orange-50 dark:bg-orange-950 px-3 py-1 rounded-full">
+                            {s.time}
+                          </span>
                         </div>
-                        <p className="text-sm opacity-80 leading-relaxed">{s.description}</p>
+                        <h4 className="text-2xl font-bold font-serif mb-3">{s.title}</h4>
+                        <p className="text-sm opacity-70 leading-relaxed mb-6">{s.description}</p>
+                        <button className="text-sm font-bold text-orange-500 flex items-center gap-2 hover:translate-x-1 transition-transform">
+                          Ver como fazer <ChevronRight className="w-4 h-4" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -360,81 +338,81 @@ const App: React.FC = () => {
             )}
 
             {activeTab === 'profile' && (
-              <div className="max-w-xl mx-auto text-center space-y-6">
-                <div className="relative inline-block">
-                  <div className="w-32 h-32 bg-orange-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
-                    <User className="w-16 h-16 text-orange-500" />
+              <div className="max-w-xl mx-auto space-y-8 text-center">
+                <div className="relative inline-block group">
+                  <div className="w-40 h-40 bg-gradient-to-tr from-orange-400 to-orange-600 rounded-full flex items-center justify-center border-8 border-white dark:border-slate-900 shadow-2xl overflow-hidden">
+                    <User className="w-20 h-20 text-white opacity-90" />
                   </div>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">Chef Amador</h2>
-                  <p className="text-slate-500">cozinheiro@exemplo.com</p>
+                  <div className="absolute bottom-2 right-2 p-2.5 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-100 dark:border-slate-700">
+                    <ChefHat className="w-5 h-5 text-orange-500" />
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-800' : 'bg-white shadow-sm'}`}>
-                    <p className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">Receitas Criadas</p>
-                    <p className="text-xl font-bold">{recipes.filter(r => r.author === 'Você').length + 12}</p>
+                <div>
+                  <h2 className="text-3xl font-bold font-serif">Mestre Cuca</h2>
+                  <p className="text-slate-500 font-medium">Chef entusiasta & Aventureiro</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div className={`p-6 rounded-3xl ${isDarkMode ? 'bg-slate-900' : 'bg-white shadow-sm'}`}>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Receitas Criadas</p>
+                    <p className="text-3xl font-black">{recipes.filter(r => r.author === 'Você').length}</p>
                   </div>
-                  <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-slate-800' : 'bg-white shadow-sm'}`}>
-                    <p className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">Cozinhadas</p>
-                    <p className="text-xl font-bold">45</p>
+                  <div className={`p-6 rounded-3xl ${isDarkMode ? 'bg-slate-900' : 'bg-white shadow-sm'}`}>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Favoritas</p>
+                    <p className="text-3xl font-black">{recipes.filter(r => r.isFavorite).length}</p>
                   </div>
                 </div>
 
                 {shoppingList.length > 0 && (
-                  <div className={`p-6 rounded-3xl text-left ${isDarkMode ? 'bg-slate-800' : 'bg-white shadow-sm'}`}>
-                    <h3 className="flex items-center gap-2 font-bold mb-4">
-                      <ShoppingCart className="w-5 h-5 text-orange-500" />
+                  <div className={`p-8 rounded-[3rem] text-left animate-in fade-in zoom-in-95 duration-500 ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white shadow-xl'}`}>
+                    <h3 className="flex items-center gap-3 text-xl font-bold mb-6">
+                      <ShoppingCart className="w-6 h-6 text-orange-500" />
                       Lista de Compras
                     </h3>
-                    <ul className="space-y-2">
+                    <ul className="space-y-4">
                       {shoppingList.map((item, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm">
-                          <input type="checkbox" className="rounded border-slate-300 text-orange-500 focus:ring-orange-500" />
-                          <span>{item}</span>
+                        <li key={i} className="flex items-center gap-4 text-sm font-medium group">
+                          <input type="checkbox" className="w-5 h-5 rounded-lg border-2 border-orange-200 text-orange-500 focus:ring-orange-500 transition-all cursor-pointer" />
+                          <span className="flex-1 group-hover:text-orange-500 transition-colors">{item}</span>
                         </li>
                       ))}
                     </ul>
                     <button 
                       onClick={() => setShoppingList([])}
-                      className="mt-4 text-xs text-red-500 font-bold"
+                      className="mt-8 text-xs font-black text-red-500/70 hover:text-red-500 uppercase tracking-widest"
                     >
-                      Limpar Lista
+                      Esvaziar Lista
                     </button>
                   </div>
                 )}
               </div>
             )}
-          </>
+          </div>
         )}
       </main>
 
-      {/* Navigation Bar */}
-      <nav className={`fixed bottom-0 left-0 right-0 z-50 transition-colors ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} border-t px-6 py-3 pb-6 flex items-center justify-around`}>
-        <NavButton active={activeTab === 'home'} onClick={() => {setActiveTab('home'); setSelectedRecipe(null);}} icon={<Utensils />} label="Home" />
-        <NavButton active={activeTab === 'suggestions'} onClick={() => {setActiveTab('suggestions'); setSelectedRecipe(null);}} icon={<Sparkles />} label="Ideias" />
-        <NavButton active={activeTab === 'favorites'} onClick={() => {setActiveTab('favorites'); setSelectedRecipe(null);}} icon={<Heart />} label="Salvos" />
-        <NavButton active={activeTab === 'profile'} onClick={() => {setActiveTab('profile'); setSelectedRecipe(null);}} icon={<User />} label="Perfil" />
+      {/* Navigation Footer */}
+      <nav className={`fixed bottom-0 left-0 right-0 z-50 px-6 py-4 pb-8 transition-all duration-300 border-t ${isDarkMode ? 'bg-slate-950/95 border-slate-800' : 'bg-white/95 border-slate-200'} backdrop-blur-xl`}>
+        <div className="max-w-lg mx-auto flex items-center justify-around">
+          <NavButton active={activeTab === 'home'} onClick={() => {setActiveTab('home'); setSelectedRecipe(null);}} icon={<Utensils />} label="Home" />
+          <NavButton active={activeTab === 'suggestions'} onClick={() => {setActiveTab('suggestions'); setSelectedRecipe(null);}} icon={<Sparkles />} label="IA Chef" />
+          <NavButton active={activeTab === 'favorites'} onClick={() => {setActiveTab('favorites'); setSelectedRecipe(null);}} icon={<Heart />} label="Salvos" />
+          <NavButton active={activeTab === 'profile'} onClick={() => {setActiveTab('profile'); setSelectedRecipe(null);}} icon={<User />} label="Perfil" />
+        </div>
       </nav>
     </div>
   );
 };
 
-interface NavButtonProps {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-}
-
-const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, label }) => (
+const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string; }> = ({ active, onClick, icon, label }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 transition-all ${active ? 'text-orange-500 scale-110' : 'text-slate-400 hover:text-slate-600'}`}
+    className={`flex flex-col items-center gap-1.5 transition-all duration-300 relative ${active ? 'text-orange-500 scale-110' : 'text-slate-400 hover:text-slate-600'}`}
   >
-    {React.cloneElement(icon as React.ReactElement, { className: 'w-6 h-6' })}
-    <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
+    {React.cloneElement(icon as React.ReactElement, { className: `w-6 h-6 ${active ? 'fill-orange-500/10' : ''}` })}
+    <span className="text-[10px] font-black uppercase tracking-tighter">{label}</span>
+    {active && <div className="absolute -bottom-2 w-1 h-1 bg-orange-500 rounded-full" />}
   </button>
 );
 
