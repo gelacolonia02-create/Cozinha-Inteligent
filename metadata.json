@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Copy of Cozinha Inteligente",
+  "description": "Uma plataforma moderna para organizar receitas, cozinhar passo a passo com assistência inteligente e gerenciar sua jornada culinária.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
